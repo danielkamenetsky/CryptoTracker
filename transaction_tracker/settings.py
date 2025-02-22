@@ -89,25 +89,16 @@ WSGI_APPLICATION = 'transaction_tracker.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    'default': dj_database_url.config(conn_max_age=600, ssl_require=True)
-}
-
-# If DATABASE_URL is not set (local development), use these settings
-if not os.environ.get('DATABASE_URL'):
-    DATABASES['default'] = {
+    'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.environ.get('DB_NAME', 'tracker_database'),
         'USER': os.environ.get('DB_USER', 'dbuser'),
         'PASSWORD': os.environ.get('DB_PASSWORD', 'password123'),
         'HOST': os.environ.get('DB_HOST', 'localhost'),
         'PORT': os.environ.get('DB_PORT', '5432'),
-        'OPTIONS': {
-            'sslmode': 'disable',
-        },
     }
-else:
-    # For Heroku, ensure SSL is used
-    DATABASES['default'].update({'SSL_REQUIRE': True})
+}
+
 
 
 # Password validation
