@@ -48,10 +48,11 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'daphne',
     'django.contrib.staticfiles',
     'transactions',
     'channels',
-    'daphne',
+
 ]
 # Channels configuration
 ASGI_APPLICATION = 'transaction_tracker.asgi.application'

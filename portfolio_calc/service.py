@@ -2,6 +2,7 @@ import os
 import sys
 import django
 
+
 # Add the project root directory to the Python path
 # This is crucial for finding the transaction_tracker module
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -14,6 +15,8 @@ django.setup()
 # Now imports will work
 from confluent_kafka import Consumer
 from transactions.models import Transaction
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 class PortfolioTracker:
     def __init__(self):
@@ -66,6 +69,24 @@ class PortfolioTracker:
             print(f"Invested: ${self.total_invested:,.2f}")
             print(f"Current Value: ${self.current_value:,.2f}")
             print(f"Profit: ${self.total_profit:,.2f}\n")
+            
+            # Send to WebSocket if Django is set up
+            try:
+                channel_layer = get_channel_layer()
+                print("Sending update to WebSocket channel")
+                async_to_sync(channel_layer.group_send)(
+                    "portfolio_updates",
+                    {
+                        "type": "portfolio_update",
+                        "total_invested": float(self.total_invested),
+                        "current_value": float(self.current_value),
+                        "total_profit": float(self.total_profit),
+                        "btc_price": float(self.prices['bitcoin'])
+                    }
+                )
+                print("Update sent successfully")
+            except Exception as e:
+                print(f"WebSocket error: {e}")
 
 # KafkaPortfolioTracker inherits from PortfolioTracker and
 # listens to the transaction_events and crypto_prices topics

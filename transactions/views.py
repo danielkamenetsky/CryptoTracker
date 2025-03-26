@@ -69,3 +69,8 @@ def register(request):
     else:
         form = UserRegistrationForm()
     return render(request, 'registration/register.html', {'form': form})
+
+
+
+def portfolio_view(request):
+    return render(request, 'transactions/portfolio.html')
