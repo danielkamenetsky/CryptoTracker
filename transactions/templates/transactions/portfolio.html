@@ -10,7 +10,98 @@
   <div id="btc-price" class="mt-2 text-sm text-gray-600">
     BTC Price: Loading...
   </div>
+  <div id="update-status" class="mt-4 text-xs text-gray-500">
+    Status: Initializing...
+  </div>
 
-  <!-- We will add the status div and script later -->
+  <!-- Add empty script tags -->
+  <script>
+    // JavaScript will go here in the next steps
+    console.log("Portfolio page script area loaded.");
+
+    // Function to update the UI elements
+    function updatePortfolioUI(data) {
+      console.log("Attempting to update UI with data:", data); // Log input data
+      // The formatCurrency function explained in detailed but simple terms:
+      // 1. It takes a value as input
+      // 2. It checks if the value is defined and not null
+      // 3. If it is, it converts the value to a number and formats it to 2 decimal places
+      // 4. If it is not, it returns "N/A"
+
+      const formatCurrency = (value) =>
+        value !== undefined && value !== null
+          ? parseFloat(value).toFixed(2)
+          : "N/A";
+
+      // The purpose of this const function in detailed but simple terms step by step is:
+
+      const currentValueElement = document.getElementById("current-value");
+      if (currentValueElement) {
+        currentValueElement.innerText = `Current Value: $${formatCurrency(
+          data.current_value
+        )}`;
+        console.log("Updated current-value");
+      } else {
+        console.error("Element with ID 'current-value' not found!");
+      }
+      // This is the same as the currentValueElement but for the total invested value. This code can eventually be refactored to use the same function for both values.
+      const totalInvestedElement = document.getElementById("total-invested");
+      if (totalInvestedElement) {
+        totalInvestedElement.innerText = `Total Invested: $${formatCurrency(
+          data.total_invested
+        )}`;
+        console.log("Updated total-invested");
+      } else {
+        console.error("Element with ID 'total-invested' not found!");
+      }
+
+      const totalProfitElement = document.getElementById("total-profit");
+      if (totalProfitElement) {
+        totalProfitElement.innerText = `Total Profit: $${formatCurrency(
+          data.total_profit
+        )}`;
+        console.log("Updated total-profit");
+      } else {
+        console.error("Element with ID 'total-profit' not found!");
+      }
+
+      const btcPriceElement = document.getElementById("btc-price");
+      if (btcPriceElement) {
+        btcPriceElement.innerText = `BTC Price: $${formatCurrency(
+          data.btc_price
+        )}`;
+        console.log("Updated btc-price");
+      } else {
+        console.error("Element with ID 'btc-price' not found!");
+      }
+
+      // This is the same as the btcPriceElement but for the status element. This code can eventually be refactored to use the same function for both values.
+      const statusElement = document.getElementById("update-status");
+      if (statusElement) {
+        const now = new Date();
+        statusElement.innerText = `Status: UI Updated at ${now.toLocaleTimeString()} (Test Data)`;
+        console.log("Updated update-status");
+      } else {
+        console.error("Element with ID 'update-status' not found!");
+      }
+    }
+
+    // --- Test the UI Update Function ---
+    console.log("Defining sample data...");
+    const sampleData = {
+      current_value: 1234.56,
+      total_invested: 1000.0,
+      total_profit: 234.56,
+      btc_price: 55000.78,
+    };
+
+    console.log("Calling updatePortfolioUI with sample data...");
+    // Call the function directly with sample data when the script runs
+    updatePortfolioUI(sampleData);
+
+    console.log("Initial UI update attempt finished.");
+
+    // Fetching and polling logic will be added later
+  </script>
+  {% endblock %}
 </div>
-{% endblock %}
