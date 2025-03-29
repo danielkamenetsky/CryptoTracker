@@ -1,81 +1,16 @@
 {% extends "base.html" %} {% block content %}
-<div class="portfolio-container">
-  <h2>Portfolio Value</h2>
-  <div id="portfolio-value">Loading...</div>
-  <div id="connection-status">WebSocket Status: Connecting...</div>
-  <div id="debug-messages"></div>
+<h1>Portfolio Dashboard</h1>
+
+<div class="portfolio-container p-4 bg-white shadow rounded mt-4">
+  <h2 class="text-xl font-semibold mb-2">Portfolio Summary</h2>
+
+  <div id="current-value" class="mb-1">Current Value: Loading...</div>
+  <div id="total-invested" class="mb-1">Total Invested: Loading...</div>
+  <div id="total-profit" class="mb-1">Total Profit: Loading...</div>
+  <div id="btc-price" class="mt-2 text-sm text-gray-600">
+    BTC Price: Loading...
+  </div>
+
+  <!-- We will add the status div and script later -->
 </div>
-
-<script>
-  // Function to add debug messages
-  function addDebugMessage(message) {
-    const debugDiv = document.getElementById("debug-messages");
-    const msgElement = document.createElement("p");
-    msgElement.textContent = message;
-    debugDiv.appendChild(msgElement);
-    console.log(message);
-  }
-
-  // Update connection status
-  function updateConnectionStatus(status) {
-    document.getElementById("connection-status").textContent =
-      "WebSocket Status: " + status;
-  }
-
-  addDebugMessage("Attempting to connect to WebSocket...");
-
-  const wsProtocol = window.location.protocol === "https:" ? "wss://" : "ws://";
-  const wsUrl = wsProtocol + window.location.host + "/ws/portfolio/";
-  addDebugMessage("WebSocket URL: " + wsUrl);
-
-  const portfolioSocket = new WebSocket(wsUrl);
-
-  portfolioSocket.onopen = function (e) {
-    addDebugMessage("WebSocket connection established");
-    updateConnectionStatus("Connected");
-  };
-
-  portfolioSocket.onmessage = function (e) {
-    addDebugMessage("Received message: " + e.data);
-    try {
-      const data = JSON.parse(e.data);
-
-      // Create HTML content
-      let html = '<table style="width:100%; border-collapse: collapse;">';
-      html +=
-        '<tr><th style="text-align:left; padding:8px;">Metric</th><th style="text-align:right; padding:8px;">Value</th></tr>';
-      html += `<tr><td style="padding:8px;">Current Portfolio Value</td><td style="text-align:right; padding:8px;">$${data.current_value.toFixed(
-        2
-      )}</td></tr>`;
-      html += `<tr><td style="padding:8px;">Total Invested</td><td style="text-align:right; padding:8px;">$${data.total_invested.toFixed(
-        2
-      )}</td></tr>`;
-      html += `<tr><td style="padding:8px;">Profit/Loss</td><td style="text-align:right; padding:8px;">$${data.total_profit.toFixed(
-        2
-      )}</td></tr>`;
-      html += `<tr><td style="padding:8px;">BTC Price</td><td style="text-align:right; padding:8px;">$${data.btc_price.toFixed(
-        2
-      )}</td></tr>`;
-      html += "</table>";
-
-      // Update the DOM
-      document.getElementById("portfolio-value").innerHTML = html;
-      addDebugMessage("Updated portfolio display");
-    } catch (error) {
-      addDebugMessage("Error processing message: " + error.message);
-    }
-  };
-
-  portfolioSocket.onclose = function (e) {
-    updateConnectionStatus("Disconnected");
-    addDebugMessage(
-      "WebSocket connection closed: " + (e.reason || "No reason provided")
-    );
-  };
-
-  portfolioSocket.onerror = function (e) {
-    updateConnectionStatus("Error");
-    addDebugMessage("WebSocket error occurred");
-  };
-</script>
 {% endblock %}

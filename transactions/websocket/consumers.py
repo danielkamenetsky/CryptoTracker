@@ -5,6 +5,8 @@ import logging
 # Set up logging
 logger = logging.getLogger(__name__)
 
+GROUP_NAME = 'portfolio_updates'
+
 class PortfolioConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         logger.info("WebSocket connection attempt")
@@ -12,7 +14,7 @@ class PortfolioConsumer(AsyncWebsocketConsumer):
         
         # Join the portfolio_updates group
         await self.channel_layer.group_add(
-            "portfolio_updates",
+            GROUP_NAME,
             self.channel_name
         )
         await self.accept()
@@ -36,9 +38,10 @@ class PortfolioConsumer(AsyncWebsocketConsumer):
         
         # Leave the portfolio_updates group
         await self.channel_layer.group_discard(
-            "portfolio_updates",
+            GROUP_NAME,
             self.channel_name
         )
+        logger.info(f"WebSocket disconnected: {self.channel_name}, left group: {GROUP_NAME}")
 
     # Receive message from WebSocket
     async def receive(self, text_data):
@@ -49,15 +52,13 @@ class PortfolioConsumer(AsyncWebsocketConsumer):
 
     # Receive message from portfolio group
     async def portfolio_update(self, event):
-        logger.info(f"Received portfolio update from group: {event}")
-        print(f"Received portfolio update from group: {event}")
+        portfolio_data = event['data']
+        logger.info(f"Received message in group {GROUP_NAME} for {self.channel_name}: {portfolio_data}")
+        print(f"Received message in group {GROUP_NAME} for {self.channel_name}: {portfolio_data}")
         
         # Send message to WebSocket
         await self.send(text_data=json.dumps({
-            'total_invested': event['total_invested'],
-            'current_value': event['current_value'],
-            'total_profit': event['total_profit'],
-            'btc_price': event['btc_price']
+            'portfolio_data': portfolio_data
         }))
-        logger.info("Sent portfolio update to client")
+        logger.info(f"Sent data to WebSocket client {self.channel_name}")
         print("Sent portfolio update to client")
