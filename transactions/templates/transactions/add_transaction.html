@@ -1,35 +1,41 @@
-{% extends 'base.html' %}
-
-{% block content %}
+{% extends 'base.html' %} {% block content %}
 <div class="max-w-md mx-auto mt-8 p-4 bg-white shadow rounded">
-    <h1 class="text-xl font-bold mb-4">Add Transaction</h1>
-    
-    <form method="POST" action="{% url 'add_transaction' %}" id="transactionForm">
-        {% csrf_token %}
-        {% for field in form %}
-        <div class="mb-4">
-            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
-            {{ field }}
-            {% if field.errors %}
-            <p class="text-red-500 text-xs italic">{{ field.errors.0 }}</p>
-            {% endif %}
-        </div>
-        {% endfor %}
-        <button type="submit" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" id="submitButton">
-            Add Transaction
-        </button>
-    </form>
+  <h1 class="text-xl font-bold mb-4">Add! Transaction</h1>
+
+  <form method="POST" action="{% url 'add_transaction' %}" id="transactionForm">
+    {% csrf_token %} {% for field in form %}
+    <div class="mb-4">
+      <label
+        for="{{ field.id_for_label }}"
+        class="block text-sm font-medium text-gray-700"
+        >{{ field.label }}</label
+      >
+      {{ field }} {% if field.errors %}
+      <p class="text-red-500 text-xs italic">{{ field.errors.0 }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+    <button
+      type="submit"
+      class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+      id="submitButton"
+    >
+      Add Transaction
+    </button>
+  </form>
 </div>
 
 <script>
-document.getElementById('transactionForm').addEventListener('submit', function(e) {
-    var submitButton = document.getElementById('submitButton');
-    if (submitButton.disabled) {
+  document
+    .getElementById("transactionForm")
+    .addEventListener("submit", function (e) {
+      var submitButton = document.getElementById("submitButton");
+      if (submitButton.disabled) {
         e.preventDefault();
-    } else {
+      } else {
         submitButton.disabled = true;
-        submitButton.textContent = 'Submitting...';
-    }
-});
+        submitButton.textContent = "Submitting...";
+      }
+    });
 </script>
 {% endblock %}
