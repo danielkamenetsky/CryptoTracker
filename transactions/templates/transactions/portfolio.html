@@ -19,6 +19,10 @@
     // JavaScript will go here in the next steps
     console.log("Portfolio page script area loaded.");
 
+    // Global variables
+    let portfolioChart = null;
+    let currentPeriod = "1m"; // Default to 1 month
+
     // Function to update the UI elements
     function updatePortfolioUI(data) {
       console.log("Attempting to update UI with data:", data); // Log input data
@@ -79,7 +83,8 @@
       const statusElement = document.getElementById("update-status");
       if (statusElement) {
         const now = new Date();
-        statusElement.innerText = `Status: UI Updated at ${now.toLocaleTimeString()} (Fetched Data)`;
+        const timeString = now.toLocaleTimeString();
+        statusElement.innerText = `Status: UI Updated at ${timeString} (Fetched Data)`;
         console.log("Updated update-status");
       } else {
         console.error("Element with ID 'update-status' not found!");
@@ -137,16 +142,218 @@
         });
     }
 
+    // Function to fetch historical portfolio data
+    function fetchPortfolioHistory(period) {
+      // Check if the loading element exists before trying to access it
+      const loadingElement = document.getElementById("chart-loading");
+      if (loadingElement) {
+        loadingElement.classList.remove("hidden");
+      }
+
+      console.log(`Fetching portfolio history for period: ${period}`);
+      fetch(`/api/portfolio/history/?period=${period}`)
+        .then((response) => {
+          console.log("Received history response from server.");
+          if (!response.ok) {
+            throw new Error(
+              `API request failed (${response.status}): ${response.statusText}`
+            );
+          }
+          return response.json();
+        })
+        .then((data) => {
+          console.log("Successfully parsed history JSON:", data);
+          updatePortfolioChart(data.labels, data.values);
+          // Check if the loading element exists before trying to access it
+          if (loadingElement) {
+            loadingElement.classList.add("hidden");
+          }
+        })
+        .catch((error) => {
+          console.error("Error during history fetch:", error);
+          // Check if the loading element exists before trying to access it
+          if (loadingElement) {
+            loadingElement.classList.add("hidden");
+          }
+          // You could add an error message to the chart container here
+        });
+    }
+
+    // Function to update the chart with new data
+    function updatePortfolioChart(labels, values) {
+      // If chart already exists, destroy it first
+      if (portfolioChart) {
+        portfolioChart.destroy();
+      }
+
+      const ctx = document.getElementById("portfolioChart").getContext("2d");
+
+      portfolioChart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: "Portfolio Value ($)",
+              data: values,
+              backgroundColor: "rgba(75, 192, 192, 0.2)",
+              borderColor: "rgba(75, 192, 192, 1)",
+              borderWidth: 2,
+              tension: 0.1,
+              pointRadius: 2,
+              pointHoverRadius: 5,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            title: {
+              display: true,
+              text: "Portfolio Value Over Time",
+            },
+            tooltip: {
+              callbacks: {
+                label: function (context) {
+                  return `$${context.parsed.y.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}`;
+                },
+              },
+            },
+            legend: {
+              display: false,
+            },
+          },
+          scales: {
+            y: {
+              beginAtZero: false,
+              ticks: {
+                callback: function (value) {
+                  return "$" + value.toLocaleString();
+                },
+              },
+            },
+            x: {
+              grid: {
+                display: false,
+              },
+            },
+          },
+          interaction: {
+            mode: "index",
+            intersect: false,
+          },
+        },
+      });
+    }
+
+    // Set up event listeners for period buttons
+    document.addEventListener("DOMContentLoaded", function () {
+      document.querySelectorAll(".period-btn").forEach((button) => {
+        button.addEventListener("click", function () {
+          // Remove active class from all buttons
+          document.querySelectorAll(".period-btn").forEach((btn) => {
+            btn.classList.remove("active");
+            btn.classList.remove("bg-blue-500");
+            btn.classList.remove("text-white");
+          });
+
+          // Add active class to clicked button
+          this.classList.add("active");
+          this.classList.add("bg-blue-500");
+          this.classList.add("text-white");
+
+          // Get the period from the button's data attribute
+          const period = this.getAttribute("data-period");
+          currentPeriod = period;
+
+          // Fetch data for this period
+          fetchPortfolioHistory(period);
+        });
+      });
+
+      // Style the default active button
+      const defaultButton = document.querySelector(
+        '.period-btn[data-period="1m"]'
+      );
+      if (defaultButton) {
+        defaultButton.classList.add("bg-blue-500");
+        defaultButton.classList.add("text-white");
+      }
+
+      // Initialize the chart with the default period (1m)
+      fetchPortfolioHistory("1m");
+    });
+
     // --- Initial Data Load ---
     console.log("Performing initial data fetch...");
-    // Remove the call with sampleData
-    // updatePortfolioUI(sampleData);
-    // Call the fetch function instead
     fetchPortfolioData();
-
     console.log("Initial fetch request initiated.");
-
-    // Polling logic will be added in the next step
   </script>
+
+  <!-- Portfolio chart container with time period selectors -->
+  <div class="portfolio-chart-container p-4 bg-white shadow rounded mt-4">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-xl font-semibold">Portfolio Performance</h2>
+
+      <!-- Time period selector -->
+      <div class="time-period-selector">
+        <button class="period-btn px-3 py-1 mx-1 rounded" data-period="1d">
+          1D
+        </button>
+        <button class="period-btn px-3 py-1 mx-1 rounded" data-period="1w">
+          1W
+        </button>
+        <button
+          class="period-btn px-3 py-1 mx-1 rounded active"
+          data-period="1m"
+        >
+          1M
+        </button>
+        <button class="period-btn px-3 py-1 mx-1 rounded" data-period="1y">
+          1Y
+        </button>
+        <button class="period-btn px-3 py-1 mx-1 rounded" data-period="5y">
+          5Y
+        </button>
+      </div>
+    </div>
+
+    <!-- Canvas for the chart -->
+    <canvas id="portfolioChart" width="400" height="200"></canvas>
+
+    <!-- Loading indicator for the chart -->
+    <div id="chart-loading" class="text-center py-4 hidden">
+      Loading chart data...
+    </div>
+  </div>
+
+  <!-- Add Chart.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    /* Additional styles for the chart container */
+    .portfolio-chart-container {
+      height: 400px;
+    }
+
+    /* Style for period buttons */
+    .period-btn {
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .period-btn:hover:not(.active) {
+      background-color: #f0f0f0;
+    }
+
+    /* Hide class for loading indicator */
+    .hidden {
+      display: none;
+    }
+  </style>
   {% endblock %}
 </div>

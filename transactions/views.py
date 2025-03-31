@@ -9,6 +9,10 @@ from django.contrib import messages
 from .forms import UserRegistrationForm
 from django.contrib.auth import login
 import logging
+import datetime
+from django.utils import timezone
+import random  # Temporary for demo data
+
 logger = logging.getLogger(__name__)
 
 
@@ -116,4 +120,92 @@ def portfolio_api(request):
         return JsonResponse({
             'error': str(e),
             'message': 'Failed to retrieve portfolio data'
+        }, status=500)
+
+def portfolio_history_api(request):
+    """
+    API endpoint that returns historical portfolio data for charting.
+    """
+    try:
+        # Get the time period from the request (default to '1m' - one month)
+        period = request.GET.get('period', '1m')
+        
+        # Define time ranges based on period
+        now = timezone.now()
+        if period == '1d':
+            # Last 24 hours, hourly data points
+            start_date = now - datetime.timedelta(days=1)
+            interval = datetime.timedelta(hours=1)
+            format_string = '%H:%M'  # Hour:Minute
+        elif period == '1w':
+            # Last 7 days, daily data points
+            start_date = now - datetime.timedelta(weeks=1)
+            interval = datetime.timedelta(days=1)
+            format_string = '%a'  # Abbreviated weekday
+        elif period == '1m':
+            # Last 30 days, daily data points
+            start_date = now - datetime.timedelta(days=30)
+            interval = datetime.timedelta(days=1)
+            format_string = '%d %b'  # Day Month
+        elif period == '1y':
+            # Last 365 days, weekly data points
+            start_date = now - datetime.timedelta(days=365)
+            interval = datetime.timedelta(weeks=1)
+            format_string = '%d %b'  # Day Month
+        elif period == '5y':
+            # Last 5 years, monthly data points
+            start_date = now - datetime.timedelta(days=365*5)
+            interval = datetime.timedelta(days=30)
+            format_string = '%b %Y'  # Month Year
+        else:
+            # Default to 1 month
+            start_date = now - datetime.timedelta(days=30)
+            interval = datetime.timedelta(days=1)
+            format_string = '%d %b'  # Day Month
+        
+        # For now, generate sample data based on the current portfolio value
+        # In a real implementation, you would query historical data from your database
+        
+        # Get current portfolio value from Redis for reference
+        r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+        current_value = float(r.get('portfolio:current_value') or 0)
+        
+        # Generate data points from start_date to now
+        data_points = []
+        labels = []
+        current_date = start_date
+        
+        # Start with a base value (60% of current value as a starting point)
+        base_value = current_value * 0.6 if current_value > 0 else 50000
+        
+        # Generate an upward trend with some volatility
+        while current_date <= now:
+            # Format the date for the label
+            label = current_date.strftime(format_string)
+            labels.append(label)
+            
+            # Calculate a value with some randomness but general upward trend
+            # The closer to current date, the closer to current_value
+            progress = (current_date - start_date).total_seconds() / (now - start_date).total_seconds()
+            target_value = base_value + (current_value - base_value) * progress
+            
+            # Add some volatility (±5%)
+            volatility = random.uniform(-0.05, 0.05)
+            value = target_value * (1 + volatility)
+            
+            data_points.append(round(value, 2))
+            current_date += interval
+        
+        # Return the data
+        return JsonResponse({
+            'labels': labels,
+            'values': data_points,
+            'period': period
+        })
+    
+    except Exception as e:
+        print(f"Error in portfolio_history_api: {str(e)}")
+        return JsonResponse({
+            'error': str(e),
+            'message': 'Failed to retrieve portfolio history data'
         }, status=500)
