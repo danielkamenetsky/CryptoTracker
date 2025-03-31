@@ -10,7 +10,7 @@ urlpatterns = [
     path('portfolio_dashboard/', views.portfolio_view, name='portfolio_dashboard'),
     path('delete_transaction/<str:transaction_id>/', views.delete_transaction, name='delete_transaction'),
     path('<str:transaction_id>/', views.transaction_detail, name='transaction_detail'),
-
+    path('api/portfolio/', views.portfolio_api, name='portfolio_api'),
 
     # You can add more URL patterns here for other views related to
 ]

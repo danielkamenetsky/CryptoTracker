@@ -34,7 +34,7 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'default-secret-key-for-dev')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['magical-coin-tracker-e4f3fa405d71.herokuapp.com', 'localhost', '127.0.0.1']
 

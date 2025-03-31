@@ -1,6 +1,7 @@
 import os
 import sys
 import django
+import redis
 
 
 # Add the project root directory to the Python path
@@ -25,6 +26,14 @@ class PortfolioTracker:
         self.total_invested = 0.0
         self.current_value = 0.0
         self.total_profit = 0.0
+        
+        # Initialize Redis connection
+        try:
+            self.redis = redis.Redis(host='localhost', port=6379, db=0)
+            print("Redis connection initialized")
+        except Exception as e:
+            print(f"Redis connection error: {e}")
+            self.redis = None
 
     # Checks if the transaction is created or deleted and updates the transactions dictionary
     def update_transaction(self, tx_id, action, amount=None, price=None):
@@ -69,6 +78,17 @@ class PortfolioTracker:
             print(f"Invested: ${self.total_invested:,.2f}")
             print(f"Current Value: ${self.current_value:,.2f}")
             print(f"Profit: ${self.total_profit:,.2f}\n")
+            
+            # Update Redis with the latest values
+            try:
+                if self.redis:
+                    self.redis.set('portfolio:current_value', str(self.current_value))
+                    self.redis.set('portfolio:total_invested', str(self.total_invested))
+                    self.redis.set('portfolio:total_profit', str(self.total_profit))
+                    self.redis.set('portfolio:btc_price', str(self.prices['bitcoin']))
+                    print("Updated Redis with latest portfolio values")
+            except Exception as e:
+                print(f"Redis update error: {e}")
             
             # Send to WebSocket if Django is set up
             try:

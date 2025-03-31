@@ -79,29 +79,74 @@
       const statusElement = document.getElementById("update-status");
       if (statusElement) {
         const now = new Date();
-        statusElement.innerText = `Status: UI Updated at ${now.toLocaleTimeString()} (Test Data)`;
+        statusElement.innerText = `Status: UI Updated at ${now.toLocaleTimeString()} (Fetched Data)`;
         console.log("Updated update-status");
       } else {
         console.error("Element with ID 'update-status' not found!");
       }
     }
 
-    // --- Test the UI Update Function ---
-    console.log("Defining sample data...");
-    const sampleData = {
-      current_value: 1234.56,
-      total_invested: 1000.0,
-      total_profit: 234.56,
-      btc_price: 55000.78,
-    };
+    // --- Add the Fetch Function ---
+    // This function is used to fetch the portfolio data from the server which in simple terms
+    // means that it is used to get the data from the server and update the UI with the fetched data.
 
-    console.log("Calling updatePortfolioUI with sample data...");
-    // Call the function directly with sample data when the script runs
-    updatePortfolioUI(sampleData);
+    function fetchPortfolioData() {
+      // What this is doing in simple terms is the following:
+      // 1. It gets the status element from the DOM
+      // 2. It updates the inner text of the status element to "Status: Fetching data..."
+      // 3. It logs the message "Fetching portfolio data via HTTP from /api/portfolio/..."
+      // 4. It fetches the portfolio data from the server using the fetch function
+      // 5. It parses the JSON data and updates the UI with the fetched data
 
-    console.log("Initial UI update attempt finished.");
+      const statusElement = document.getElementById("update-status");
+      // if the status element is found, it updates the inner text of the status element to "Status: Fetching data..."
+      if (statusElement) statusElement.innerText = "Status: Fetching data...";
+      console.log("Fetching portfolio data via HTTP from /api/portfolio/...");
 
-    // Fetching and polling logic will be added later
+      fetch("/api/portfolio/") // The actual API call
+        .then((response) => {
+          console.log("Received response from server.");
+          if (!response.ok) {
+            // Handle HTTP errors (like 404 Not Found, 500 Server Error)
+            console.error(
+              `Network response error: ${response.status} ${response.statusText}`
+            );
+            // Try to read the response body for more details if possible
+            return response.text().then((text) => {
+              console.error("Error response body:", text);
+              throw new Error(
+                `API request failed (${response.status}): ${response.statusText}`
+              );
+            });
+          }
+          console.log("Response OK, parsing JSON...");
+          return response.json(); // Parse JSON body if response is OK
+        })
+        .then((data) => {
+          // This block runs only if the response was OK and JSON parsing succeeded
+          console.log("Successfully parsed JSON data:", data);
+          updatePortfolioUI(data); // Update the UI with the fetched data
+        })
+        .catch((error) => {
+          // This block runs if fetch failed (network error) OR if response was not OK OR if JSON parsing failed
+          console.error("Error during fetch or processing:", error);
+          if (statusElement)
+            statusElement.innerText = `Status: Error - ${error.message}`;
+          // Optionally clear or indicate error in the main data fields
+          // document.getElementById("current-value").innerText = `Current Value: Error fetching`;
+        });
+    }
+
+    // --- Initial Data Load ---
+    console.log("Performing initial data fetch...");
+    // Remove the call with sampleData
+    // updatePortfolioUI(sampleData);
+    // Call the fetch function instead
+    fetchPortfolioData();
+
+    console.log("Initial fetch request initiated.");
+
+    // Polling logic will be added in the next step
   </script>
   {% endblock %}
 </div>
