@@ -15,6 +15,7 @@ from pathlib import Path
 import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
+import redis
 
 load_dotenv()
 # Function to get environment variables
@@ -48,25 +49,24 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'daphne',
     'django.contrib.staticfiles',
     'transactions',
-    'channels',
-
+    # Uncomment these for websocket support
+    # 'channels',
+    # 'daphne',
 ]
-# Channels configuration
-ASGI_APPLICATION = 'transaction_tracker.asgi.application'
 
-# Channels layer for Redis
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            'hosts': [('127.0.0.1', 6379)],
-            
-        }
-    }
-}
+# Uncomment for websocket support
+# ASGI_APPLICATION = 'transaction_tracker.asgi.application'
+# CHANNEL_LAYERS = {
+#     'default': {
+#         'BACKEND': 'channels_redis.core.RedisChannelLayer',
+#         'CONFIG': {
+#             'hosts': [(os.environ.get('REDIS_URL', 'redis://localhost:6379'))],
+#         }
+#     }
+# }
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',  
@@ -164,3 +164,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_REDIRECT_URL = '/'  # Redirect to home page after login
 LOGOUT_REDIRECT_URL = '/'  # Redirect to home page after logout
 LOGIN_URL = '/accounts/login/'  # Where to redirect if a login is required
+
+# Set Redis URL based on environment (Render provides a Redis URL)
+REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+
+# Make sure portfolio_api can handle case when Redis is not available
+def get_redis_connection():
+    try:
+        return redis.Redis.from_url(REDIS_URL, decode_responses=True)
+    except:
+        return None

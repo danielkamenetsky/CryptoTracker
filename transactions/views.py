@@ -12,6 +12,7 @@ import logging
 import datetime
 from django.utils import timezone
 import random  # Temporary for demo data
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -87,8 +88,18 @@ def portfolio_api(request):
     This function retrieves the latest calculated values from Redis.
     """
     try:
-        # Connect to Redis
-        r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+        # Connect to Redis using the helper function
+        r = settings.get_redis_connection()
+        
+        if not r:
+            # Redis is not available - return sample data
+            return JsonResponse({
+                'current_value': 50000,
+                'total_invested': 45000,
+                'total_profit': 5000,
+                'btc_price': 65000,
+                'note': 'Using sample data (Redis not available)'
+            })
         
         # Get the latest portfolio data from Redis
         current_value = r.get('portfolio:current_value')
@@ -116,11 +127,14 @@ def portfolio_api(request):
         # Log the error
         print(f"Error in portfolio_api: {str(e)}")
         
-        # Return an error response
+        # Return sample data as fallback
         return JsonResponse({
-            'error': str(e),
-            'message': 'Failed to retrieve portfolio data'
-        }, status=500)
+            'current_value': 50000,
+            'total_invested': 45000,
+            'total_profit': 5000,
+            'btc_price': 65000,
+            'note': f'Using sample data due to error: {str(e)}'
+        })
 
 def portfolio_history_api(request):
     """
@@ -163,12 +177,16 @@ def portfolio_history_api(request):
             interval = datetime.timedelta(days=1)
             format_string = '%d %b'  # Day Month
         
-        # For now, generate sample data based on the current portfolio value
-        # In a real implementation, you would query historical data from your database
+        # Try to get current portfolio value from Redis for reference
+        r = settings.get_redis_connection()
         
-        # Get current portfolio value from Redis for reference
-        r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
-        current_value = float(r.get('portfolio:current_value') or 0)
+        # Default value if Redis is not available
+        current_value = 50000
+        
+        if r:
+            redis_value = r.get('portfolio:current_value')
+            if redis_value:
+                current_value = float(redis_value)
         
         # Generate data points from start_date to now
         data_points = []
