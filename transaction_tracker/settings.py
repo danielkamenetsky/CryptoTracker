@@ -37,7 +37,7 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'default-secret-key-for-dev')
 # DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
 DEBUG = True
 
-ALLOWED_HOSTS = ['magical-coin-tracker-e4f3fa405d71.herokuapp.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = [ 'localhost', '127.0.0.1', 'cryptotracker-4i4y.onrender.com', '192.168.1.100']
 
 
 
