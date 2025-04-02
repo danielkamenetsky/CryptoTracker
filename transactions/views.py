@@ -4,6 +4,8 @@ from django.http import JsonResponse, HttpResponse
 import redis  # Make sure you have the redis package installed (pip install redis)
 from django.core.management import call_command
 import io
+from django.db import connection
+from django.contrib.auth.models import User
 
 from.models import Transaction
 from .forms import TransactionForm
@@ -235,3 +237,58 @@ def run_migrations(request):
     out = io.StringIO()
     call_command('migrate', stdout=out)
     return HttpResponse(f"Migrations applied:<br><pre>{out.getvalue()}</pre>")
+
+def setup_database(request):
+    """View to set up the database with required tables and demo user."""
+    response = []
+    
+    # Create transactions_transaction table
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+            CREATE TABLE IF NOT EXISTS "transactions_transaction" (
+                "id" varchar(36) NOT NULL PRIMARY KEY,
+                "cryptocurrency" varchar(10) NOT NULL,
+                "amount" decimal(20, 8) NOT NULL,
+                "price" decimal(20, 2) NOT NULL,
+                "date" date NOT NULL,
+                "user_id" integer NOT NULL REFERENCES "auth_user" ("id") DEFERRABLE INITIALLY DEFERRED
+            );
+            """)
+        response.append("SUCCESS: Transactions table created successfully")
+    except Exception as e:
+        response.append(f"ERROR: Error creating transactions table: {str(e)}")
+    
+    # Create demo user
+    try:
+        if not User.objects.filter(username='demo_user').exists():
+            user = User.objects.create(
+                username='demo_user',
+                email='demo@example.com',
+                is_active=True
+            )
+            user.set_password('Portfolio123!')
+            user.save()
+            response.append("SUCCESS: Demo user created successfully")
+        else:
+            response.append("INFO: Demo user already exists")
+    except Exception as e:
+        response.append(f"ERROR: Error creating demo user: {str(e)}")
+    
+    # List all tables
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+            tables = [table[0] for table in cursor.fetchall()]
+        response.append(f"INFO: Database tables: {', '.join(tables)}")
+    except Exception as e:
+        response.append(f"ERROR: Error listing tables: {str(e)}")
+    
+    html_response = "<h1>Database Setup</h1>"
+    html_response += "<ul>"
+    for item in response:
+        html_response += f"<li>{item}</li>"
+    html_response += "</ul>"
+    html_response += "<p><a href='/transaction_list/'>Go to Transactions</a></p>"
+    
+    return HttpResponse(html_response)

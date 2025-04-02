@@ -13,5 +13,5 @@ urlpatterns = [
     path('api/portfolio/', views.portfolio_api, name='portfolio_api'),
     path('api/portfolio/history/', views.portfolio_history_api, name='portfolio_history_api'),
     path('run-migrations/', views.run_migrations, name='run_migrations'),
-
+    path('setup-database/', views.setup_database, name='setup_database'),
 ]
