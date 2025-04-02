@@ -12,6 +12,6 @@ urlpatterns = [
     path('<str:transaction_id>/', views.transaction_detail, name='transaction_detail'),
     path('api/portfolio/', views.portfolio_api, name='portfolio_api'),
     path('api/portfolio/history/', views.portfolio_history_api, name='portfolio_history_api'),
+    path('run-migrations/', views.run_migrations, name='run_migrations'),
 
-    # You can add more URL patterns here for other views related to
 ]

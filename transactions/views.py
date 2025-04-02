@@ -1,7 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 import redis  # Make sure you have the redis package installed (pip install redis)
+from django.core.management import call_command
+import io
 
 from.models import Transaction
 from .forms import TransactionForm
@@ -227,3 +229,9 @@ def portfolio_history_api(request):
             'error': str(e),
             'message': 'Failed to retrieve portfolio history data'
         }, status=500)
+
+def run_migrations(request):
+    """Temporary view to run migrations."""
+    out = io.StringIO()
+    call_command('migrate', stdout=out)
+    return HttpResponse(f"Migrations applied:<br><pre>{out.getvalue()}</pre>")
