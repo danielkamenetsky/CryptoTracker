@@ -6,6 +6,7 @@ from django.core.management import call_command
 import io
 from django.db import connection
 from django.contrib.auth.models import User
+from transaction_tracker.turso_utils import execute_query
 
 from.models import Transaction
 from .forms import TransactionForm
@@ -237,3 +238,11 @@ def run_migrations(request):
     out = io.StringIO()
     call_command('migrate', stdout=out)
     return HttpResponse(f"Migrations applied:<br><pre>{out.getvalue()}</pre>")
+
+def my_existing_view(request):
+    # Use Turso to fetch data
+    transactions = execute_query("SELECT * FROM transactions WHERE user_id = ? LIMIT 20", [request.user.id])
+    
+    return render(request, 'transactions.html', {
+        'transactions': transactions
+    })

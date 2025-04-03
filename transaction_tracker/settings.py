@@ -23,8 +23,7 @@ load_dotenv()
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-# BASE_DIR = Path(__file__).resolve().parent.parent
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # Quick-start development settings - unsuitable for production
@@ -104,15 +103,25 @@ WSGI_APPLICATION = 'transaction_tracker.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 # SQLite configuration (currently active)
+# Standard SQLite for Django's internal needs
 DATABASES = {
     'default': {
-        'ENGINE': 'django_libsql',  # Use the Turso engine
-        'NAME': os.environ.get('TURSO_DB_URL'), # Get URL from env var
-        'OPTIONS': {
-            'auth_token': os.environ.get('TURSO_AUTH_TOKEN'), # Get token from env var
-        }
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# Turso configuration for direct access
+TURSO_DATABASE_URL = os.environ.get('TURSO_DATABASE_URL', '')
+TURSO_AUTH_TOKEN = os.environ.get('TURSO_AUTH_TOKEN', '')
+
+# Helper function to get a Turso connection
+def get_turso_client():
+    from libsql_client import create_client_sync
+    return create_client_sync(
+        url=TURSO_DATABASE_URL,
+        auth_token=TURSO_AUTH_TOKEN
+    )
 
 # PostgreSQL configuration (commented out for future use)
 # DATABASES = {
