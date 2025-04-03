@@ -198,9 +198,3 @@ def get_redis_connection():
         return redis.Redis.from_url(REDIS_URL, decode_responses=True)
     except:
         return None
-
-# Auto-run migrations
-if os.environ.get('RENDER'):
-    django.setup()
-    from django.core.management import call_command
-    call_command('migrate')
