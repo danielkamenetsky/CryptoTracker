@@ -168,9 +168,12 @@ LOGIN_URL = '/accounts/login/'  # Where to redirect if a login is required
 # Set Redis URL based on environment (Render provides a Redis URL)
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
 
-# Make sure portfolio_api can handle case when Redis is not available
+# Add Redis configuration
+REDIS_HOST = 'localhost'
+REDIS_PORT = 6379
+REDIS_DB = 0
+
+# Add this function to your settings.py
 def get_redis_connection():
-    try:
-        return redis.Redis.from_url(REDIS_URL, decode_responses=True)
-    except:
-        return None
+    import redis
+    return redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB)

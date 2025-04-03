@@ -1,7 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 import redis  # Make sure you have the redis package installed (pip install redis)
+from django.core.management import call_command
+import io
+from django.db import connection
+from django.contrib.auth.models import User
 
 from.models import Transaction
 from .forms import TransactionForm
@@ -88,44 +92,48 @@ def portfolio_api(request):
     This function retrieves the latest calculated values from Redis.
     """
     try:
-        # Connect to Redis using the helper function
-        r = settings.get_redis_connection()
+        # Import Redis directly here instead of using settings
+        import redis
+        from django.conf import settings
         
-        if not r:
-            # Redis is not available - return sample data
-            return JsonResponse({
-                'current_value': 50000,
-                'total_invested': 45000,
-                'total_profit': 5000,
-                'btc_price': 65000,
-                'note': 'Using sample data (Redis not available)'
-            })
-        
-        # Get the latest portfolio data from Redis
-        current_value = r.get('portfolio:current_value')
-        total_invested = r.get('portfolio:total_invested')
-        total_profit = r.get('portfolio:total_profit')
-        btc_price = r.get('portfolio:btc_price')
-        
-        # Convert string values to float (or None if not found)
-        current_value = float(current_value) if current_value else 0
-        total_invested = float(total_invested) if total_invested else 0
-        total_profit = float(total_profit) if total_profit else 0
-        btc_price = float(btc_price) if btc_price else 0
-        
-        # Create the response data
-        data = {
-            'current_value': current_value,
-            'total_invested': total_invested,
-            'total_profit': total_profit,
-            'btc_price': btc_price
-        }
-        
-        return JsonResponse(data)
+        # Create Redis connection directly
+        try:
+            redis_conn = redis.Redis(
+                host=getattr(settings, 'REDIS_HOST', 'localhost'),
+                port=getattr(settings, 'REDIS_PORT', 6379),
+                db=getattr(settings, 'REDIS_DB', 0)
+            )
+            
+            # Test the connection
+            redis_conn.ping()
+            
+            # Get the latest portfolio data from Redis
+            current_value = redis_conn.get('portfolio:current_value')
+            total_invested = redis_conn.get('portfolio:total_invested')
+            total_profit = redis_conn.get('portfolio:total_profit')
+            btc_price = redis_conn.get('portfolio:btc_price')
+            
+            # Convert string values to float (or None if not found)
+            current_value = float(current_value) if current_value else 0
+            total_invested = float(total_invested) if total_invested else 0
+            total_profit = float(total_profit) if total_profit else 0
+            btc_price = float(btc_price) if btc_price else 0
+            
+            # Create the response data
+            data = {
+                'current_value': current_value,
+                'total_invested': total_invested,
+                'total_profit': total_profit,
+                'btc_price': btc_price
+            }
+            
+            return JsonResponse(data)
+        except redis.ConnectionError:
+            raise Exception("Could not connect to Redis server")
     
     except Exception as e:
         # Log the error
-        print(f"Error in portfolio_api: {str(e)}")
+        logger.error(f"Error in portfolio_api: {str(e)}")
         
         # Return sample data as fallback
         return JsonResponse({
@@ -133,7 +141,7 @@ def portfolio_api(request):
             'total_invested': 45000,
             'total_profit': 5000,
             'btc_price': 65000,
-            'note': f'Using sample data due to error: {str(e)}'
+            'note': f"Using sample data due to error: {str(e)}"
         })
 
 def portfolio_history_api(request):
@@ -177,16 +185,8 @@ def portfolio_history_api(request):
             interval = datetime.timedelta(days=1)
             format_string = '%d %b'  # Day Month
         
-        # Try to get current portfolio value from Redis for reference
-        r = settings.get_redis_connection()
-        
-        # Default value if Redis is not available
+        # Use a fixed value instead of trying to connect to Redis
         current_value = 50000
-        
-        if r:
-            redis_value = r.get('portfolio:current_value')
-            if redis_value:
-                current_value = float(redis_value)
         
         # Generate data points from start_date to now
         data_points = []
@@ -194,7 +194,7 @@ def portfolio_history_api(request):
         current_date = start_date
         
         # Start with a base value (60% of current value as a starting point)
-        base_value = current_value * 0.6 if current_value > 0 else 50000
+        base_value = current_value * 0.6
         
         # Generate an upward trend with some volatility
         while current_date <= now:
@@ -227,3 +227,9 @@ def portfolio_history_api(request):
             'error': str(e),
             'message': 'Failed to retrieve portfolio history data'
         }, status=500)
+def run_migrations(request):
+    """Temporary view to run migrations."""
+    out = io.StringIO()
+    call_command('migrate', stdout=out)
+    return HttpResponse(f"Migrations applied:<br><pre>{out.getvalue()}</pre>")
+
