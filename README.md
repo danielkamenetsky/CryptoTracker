@@ -6,7 +6,7 @@ A Django application for tracking cryptocurrency transactions and portfolio perf
 
 Want to see the application in action without setting it up yourself? Watch a quick video walkthrough below. This is a great option if you're having trouble with the setup steps or just want a quick preview:
 
-[<img src="https://cdn.loom.com/sessions/thumbnails/YOUR_LOOM_THUMBNAIL_ID-with-play.gif" width="300"/>](https://www.loom.com/share/bfa98368d6164e0186f83339202a1953?sid=43663764-b179-4c8e-a5f4-b66e983d4b81)
+[Video Walkthrough](https://www.loom.com/share/bfa98368d6164e0186f83339202a1953?sid=43663764-b179-4c8e-a5f4-b66e983d4b81)
 
 ## Running with Docker (Recommended)
 
