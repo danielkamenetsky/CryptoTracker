@@ -106,8 +106,11 @@ WSGI_APPLICATION = 'transaction_tracker.wsgi.application'
 # SQLite configuration (currently active)
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django_libsql',  # Use the Turso engine
+        'NAME': os.environ.get('TURSO_DB_URL'), # Get URL from env var
+        'OPTIONS': {
+            'auth_token': os.environ.get('TURSO_AUTH_TOKEN'), # Get token from env var
+        }
     }
 }
 
