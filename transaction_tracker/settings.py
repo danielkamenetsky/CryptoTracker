@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'transactions',
+    'price_updater',
     # Uncomment these for websocket support
     # 'channels',
     # 'daphne',
@@ -102,50 +103,26 @@ WSGI_APPLICATION = 'transaction_tracker.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# SQLite configuration (currently active)
-# Standard SQLite for Django's internal needs
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+if not DATABASE_URL:
+    # If DATABASE_URL is not set in the environment, raise an error
+    # because we require PostgreSQL for this setup.
+    raise ImproperlyConfigured("The DATABASE_URL environment variable must be set.")
+
+# Configure the default database using the DATABASE_URL
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default=DATABASE_URL,
+        conn_max_age=600, # Optional: connection pooling setting
+        ssl_require=os.environ.get('DB_SSL_REQUIRE', 'False') == 'True' # Optional: Add if using SSL
+    )
 }
 
-# Turso configuration for direct access
-TURSO_DATABASE_URL = os.environ.get('TURSO_DATABASE_URL', '')
-TURSO_AUTH_TOKEN = os.environ.get('TURSO_AUTH_TOKEN', '')
-
-# Helper function to get a Turso connection
-def get_turso_client():
-    from libsql_client import create_client_sync
-    return create_client_sync(
-        url=TURSO_DATABASE_URL,
-        auth_token=TURSO_AUTH_TOKEN
-    )
-
-# PostgreSQL configuration (commented out for future use)
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'your_db_name',
-#         'USER': 'your_db_user',
-#         'PASSWORD': 'your_db_password',
-#         'HOST': 'localhost',
-#         'PORT': '5432',
-#     }
-# }
-
-# For production with environment variables (commented out for future use)
-# import dj_database_url
-# DATABASE_URL = os.environ.get('DATABASE_URL')
-# if DATABASE_URL:
-#     DATABASES = {
-#         'default': dj_database_url.config(
-#             default=DATABASE_URL,
-#             conn_max_age=600,
-#             conn_health_checks=True,
-#         )
-#     }
+# Optional: You can still explicitly set parts if needed, though dj_database_url usually handles it
+# if 'default' in DATABASES:
+#     DATABASES['default']['HOST'] = os.environ.get('DB_HOST', 'db')
+#     DATABASES['default']['PORT'] = os.environ.get('DB_PORT', '5432')
 
 
 # Password validation
@@ -201,9 +178,15 @@ LOGIN_URL = '/accounts/login/'  # Where to redirect if a login is required
 # Set Redis URL based on environment (Render provides a Redis URL)
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
 
-# Make sure portfolio_api can handle case when Redis is not available
+# Redis configuration
+REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
+REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379))
+REDIS_DB = int(os.environ.get('REDIS_DB', 0))
+
+# Kafka configuration
+KAFKA_BOOTSTRAP_SERVERS = os.environ.get('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
+
+# Add this function to your settings.py
 def get_redis_connection():
-    try:
-        return redis.Redis.from_url(REDIS_URL, decode_responses=True)
-    except:
-        return None
+    import redis
+    return redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB)

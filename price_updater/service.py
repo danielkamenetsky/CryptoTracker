@@ -2,13 +2,15 @@
 import time  # For waiting between requests
 import requests  # To fetch data from CoinGecko
 from confluent_kafka import Producer  # To send messages to Kafka
+import os  # For environment variable access
 
 # Configuration - Easy to change later
 COIN_IDS = ['bitcoin', 'ethereum']  # Coins to track
 INTERVAL = 60  # Check every 60 seconds
 
-# Connect to Kafka
-producer = Producer({'bootstrap.servers': 'localhost:9092'})
+# Connect to Kafka using environment variable
+bootstrap_servers = os.environ.get('KAFKA_BOOTSTRAP_SERVERS', 'kafka-broker:9092')
+producer = Producer({'bootstrap.servers': bootstrap_servers})
 
 def fetch_prices():
     try:
