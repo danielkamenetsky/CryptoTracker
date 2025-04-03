@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'transactions',
+    'price_updater',
     # Uncomment these for websocket support
     # 'channels',
     # 'daphne',
@@ -102,17 +103,26 @@ WSGI_APPLICATION = 'transaction_tracker.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+if not DATABASE_URL:
+    # If DATABASE_URL is not set in the environment, raise an error
+    # because we require PostgreSQL for this setup.
+    raise ImproperlyConfigured("The DATABASE_URL environment variable must be set.")
+
+# Configure the default database using the DATABASE_URL
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME', 'tracker_database'),
-        'USER': os.environ.get('DB_USER', 'dbuser'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'password123'),
-        'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': os.environ.get('DB_PORT', '5432'),
-    }
+    'default': dj_database_url.config(
+        default=DATABASE_URL,
+        conn_max_age=600, # Optional: connection pooling setting
+        ssl_require=os.environ.get('DB_SSL_REQUIRE', 'False') == 'True' # Optional: Add if using SSL
+    )
 }
 
+# Optional: You can still explicitly set parts if needed, though dj_database_url usually handles it
+# if 'default' in DATABASES:
+#     DATABASES['default']['HOST'] = os.environ.get('DB_HOST', 'db')
+#     DATABASES['default']['PORT'] = os.environ.get('DB_PORT', '5432')
 
 
 # Password validation
@@ -168,10 +178,13 @@ LOGIN_URL = '/accounts/login/'  # Where to redirect if a login is required
 # Set Redis URL based on environment (Render provides a Redis URL)
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
 
-# Add Redis configuration
-REDIS_HOST = 'localhost'
-REDIS_PORT = 6379
-REDIS_DB = 0
+# Redis configuration
+REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
+REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379))
+REDIS_DB = int(os.environ.get('REDIS_DB', 0))
+
+# Kafka configuration
+KAFKA_BOOTSTRAP_SERVERS = os.environ.get('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
 
 # Add this function to your settings.py
 def get_redis_connection():

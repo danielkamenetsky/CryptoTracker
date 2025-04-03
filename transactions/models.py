@@ -9,6 +9,7 @@ from django.db.models.signals import post_save, post_delete
 # is a function that modifies the behavior of another function.
 from django.dispatch import receiver
 from .services import send_transaction_event
+from django.conf import settings # Import settings
 
 class Transaction(models.Model):
     id = models.BigAutoField(primary_key=True)
@@ -23,7 +24,13 @@ class Transaction(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.ticker} - {self.transaction_id}"
 
-producer = Producer({'bootstrap.servers': 'localhost:9092'})
+# Initialize producer using settings
+producer_config = {'bootstrap.servers': settings.KAFKA_BOOTSTRAP_SERVERS}
+try:
+    producer = Producer(producer_config)
+except Exception as e:
+    print(f"Failed to initialize Kafka Producer in models.py: {e}")
+    producer = None # Set producer to None if initialization fails
 
 # This function sends a message from the Transaction model
 # to the Kafka topic 'transaction_events'
