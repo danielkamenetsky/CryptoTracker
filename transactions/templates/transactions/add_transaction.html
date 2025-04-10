@@ -1,6 +1,6 @@
 {% extends 'base.html' %} {% block content %}
 <div class="max-w-md mx-auto mt-8 p-4 bg-white shadow rounded">
-  <h1 class="text-xl font-bold mb-4">Add! Transaction</h1>
+  <h1 class="text-xl font-bold mb-4">Add Transaction</h1>
 
   <form method="POST" action="{% url 'add_transaction' %}" id="transactionForm">
     {% csrf_token %} {% for field in form %}
